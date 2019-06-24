@@ -123,7 +123,12 @@
 			if(count($_POST>0)){
 				$name = $_POST['name'];
 				$phone = $_POST['phone'];
-				file_put_contents('apps.txt', "$name $phone\n", FILE_APPEND);
+				$db = new PDO('mysql:host=localhost;dbname=mysite','root','');
+				$db->exec('SET NAME UTF8');
+				$query = $db->prepare("INSERT INTO apps (name, phone) VALUE(:name, :phone)");
+				$values = ['name'=>$name, 'phone'=>$phone];
+				$query->execute($values);
+
 				echo 'ваша заявка принята';
 			}
 
@@ -161,10 +166,34 @@
 			let $but = $("#reg>input[type=button]");
 			let $inputs = $("#reg>input[type=text]");
 
+
+
 			$("#reg>input[type=button]").on("click", function(){
 				$but.attr("disabled", true);
 				$res.addClass("loading");
-				$.post("test/ajaxtest1.php",$form.serialize(), function(data){
+
+				$.ajax({
+					url:"test/ajaxtest1.php",
+					method:"POST",
+					data: $form.serialize(),
+					dataType: "json",
+					success: function(data){
+							console.log(data);
+							$but.attr("disabled", false);
+							$res.removeClass("loading");
+							if(data.res){
+								$res.html("Заявка отправлена");
+								$form[0].reset();
+							} else {
+								for(let key in data.errors){
+									$("#reg>input[name="+key+"]" ).next().html(data.errors[key]);
+								}
+							}
+						},
+					error: function(){alert("некорректный джейсон")}
+				});
+
+				/*$.post("test/ajaxtest1.php",$form.serialize(), function(data){
 					console.log(data);
 					$but.attr("disabled", false);
 					$res.removeClass("loading");
@@ -176,7 +205,7 @@
 							$("#reg>input[name="+key+"]" ).next().html(data.errors[key]);
 						}
 					}
-				},"json");
+				},"json").fail(function(){alert("некорректный джейсон")});*/
 			});
 		});
 	</script>
